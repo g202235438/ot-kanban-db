@@ -16,11 +16,13 @@ GitHub Project의 보드, 상태 컬럼, 작업 카드, 담당자를 반복 없�
 | 원본 개념 | 테이블 | 설명 |
 | --- | --- | --- |
 | 팀 | `kanban_team` | 프로젝트 팀과 저장소 |
-| 팀원 | `kanban_member` | 카드 담당자 |
+| 팀원 | `kanban_member`, `kanban_team_member` | 팀원과 역할 |
 | 프로젝트 보드 | `kanban_board` | GitHub Project |
-| 상태 컬럼 | `kanban_column` | Backlog, Ready, In progress, Done |
-| 작업 카드 | `kanban_card` | GitHub Issue 기반 작업과 보드 위치 |
-| 카드-담당자 | `kanban_card_assignee` | 다대다 연결 |
+| 상태 컬럼 | `kanban_status` | Backlog, Ready, In progress, Done |
+| Milestone | `kanban_milestone` | 여러 작업이 공유하는 목표 |
+| 작업 카드 | `kanban_task` | GitHub Issue 기반 작업 |
+| 카드-담당자 | `kanban_task_assignee` | 다대다 연결 |
+| 상태 이력 | `kanban_task_status_history` | 카드 이동 기록 |
 
 ## 샘플 데이터
 
@@ -35,11 +37,11 @@ GitHub Project의 보드, 상태 컬럼, 작업 카드, 담당자를 반복 없�
 
 원본 담당자 필드가 비어 있어 발표용 한글 샘플 담당자 3명을 추가하고 카드에 역할별로 연결했습니다. TSV에 있던 Issue URL, 우선순위, 예상치, 크기, 하위 이슈 진행률 필드도 카드에 저장합니다.
 
-`kanban_column`의 값은 보드에서의 위치이고, `kanban_card.issue_state`는 GitHub Issue의 열림/닫힘 상태입니다. 두 상태를 분리해 카드 이동과 Issue 상태 변경을 독립적으로 관리합니다.
+`kanban_status`의 값은 보드에서의 위치이고, `kanban_task.issue_state`는 GitHub Issue의 열림/닫힘 상태입니다. 두 상태를 분리해 카드 이동과 Issue 상태 변경을 독립적으로 관리합니다.
 
 ## 실행
 
-1. Supabase SQL Editor에서 [`migrations/001_create_kanban_schema.sql`](migrations/001_create_kanban_schema.sql)을 실행합니다.
+1. Supabase SQL Editor에서 [`migrations/002_rebuild_kanban_schema.sql`](migrations/002_rebuild_kanban_schema.sql)을 실행합니다.
 2. 또는 이미 적용된 Supabase 프로젝트의 `kanban_` 테이블을 조회합니다.
 3. [`docs/kanban-erd.md`](docs/kanban-erd.md)의 Conceptual ERD를 발표자료에 포함합니다.
 

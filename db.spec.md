@@ -1,80 +1,46 @@
 # Kanban DB Schema Specification
 
-## `kanban_team`
+## 설계 방향
 
-| Column | Type | Constraint |
-| --- | --- | --- |
-| `team_id` | UUID | PK, default `gen_random_uuid()` |
-| `team_name` | TEXT | NOT NULL, UNIQUE |
-| `repository_url` | TEXT | NOT NULL |
-| `created_at` | TIMESTAMPTZ | NOT NULL |
+GitHub Issue의 `open/closed` 상태와 Project 보드의 `Backlog/Ready/In progress/Done` 위치는 서로 다른 의미이므로 분리합니다.
 
-## `kanban_member`
+## 테이블
 
-팀원은 여러 카드를 맡을 수 있으므로 카드와 직접 반복 저장하지 않습니다.
+| 테이블 | 역할 |
+| --- | --- |
+| `kanban_team` | 팀과 원본 저장소 |
+| `kanban_member` | GitHub 담당자 |
+| `kanban_team_member` | 팀원 소속 및 역할 N:M |
+| `kanban_board` | GitHub Project 보드 |
+| `kanban_status` | 보드 상태 컬럼과 표시 순서 |
+| `kanban_milestone` | 여러 Task가 공유하는 목표 |
+| `kanban_task` | GitHub Issue 기반 작업 카드 |
+| `kanban_task_assignee` | Task와 담당자의 N:M 연결 |
+| `kanban_task_status_history` | Task 상태 이동 이력 |
 
-| Column | Type | Constraint |
-| --- | --- | --- |
-| `member_id` | UUID | PK |
-| `team_id` | UUID | FK → `kanban_team`, CASCADE |
-| `member_name` | TEXT | NOT NULL |
-| `github_username` | TEXT | Nullable |
-| `department` | TEXT | Nullable |
-| `student_number` | TEXT | Nullable |
+## 무결성 규칙
 
-`UNIQUE(team_id, member_name)`으로 팀 내 이름 중복을 방지합니다.
+- 보드 상태는 `UNIQUE(board_id, status_name)`과 `UNIQUE(board_id, position)`으로 관리합니다.
+- Issue 번호는 `UNIQUE(board_id, github_issue_number)`로 중복을 막습니다.
+- `issue_state`는 `open`, `closed`만 허용합니다.
+- `priority`는 `낮음`, `중간`, `높음`, `size`는 `S`, `M`, `L`만 허용합니다.
+- 담당자와 Task는 복합 PK 연결 테이블로 중복 배정을 막습니다.
+- 하위 이슈 완료 수는 전체 수보다 클 수 없습니다.
+- 종료 시각은 생성 시각보다 빠를 수 없습니다.
 
-## `kanban_board`
+## `kanban_task` 주요 컬럼
 
-| Column | Type | Constraint |
-| --- | --- | --- |
-| `board_id` | UUID | PK |
-| `team_id` | UUID | FK → `kanban_team`, CASCADE |
-| `board_name` | TEXT | NOT NULL |
-| `github_project_url` | TEXT | NOT NULL, UNIQUE |
+| 컬럼 | 설명 |
+| --- | --- |
+| `status_id` | 현재 보드 컬럼 |
+| `milestone_id` | 선택적 목표 |
+| `github_issue_number` | 원본 Issue 번호 |
+| `issue_state` | Issue 자체의 열림/닫힘 |
+| `title`, `description` | 작업 내용 |
+| `priority`, `estimate`, `size` | 프로젝트 관리 속성 |
+| `sub_issues_completed`, `sub_issues_total` | 하위 이슈 진행률 |
+| `position` | 같은 상태 안의 카드 순서 |
 
-## `kanban_column`
+## 데이터 입력 순서
 
-`position`은 보드에서 왼쪽부터 표시되는 순서입니다.
-
-| Column | Type | Constraint |
-| --- | --- | --- |
-| `column_id` | UUID | PK |
-| `board_id` | UUID | FK → `kanban_board`, CASCADE |
-| `column_name` | TEXT | NOT NULL |
-| `position` | INTEGER | NOT NULL, `>= 0` |
-
-`UNIQUE(board_id, column_name)`, `UNIQUE(board_id, position)`을 적용합니다.
-
-## `kanban_card`
-
-| Column | Type | Constraint |
-| --- | --- | --- |
-| `card_id` | UUID | PK |
-| `board_id` | UUID | FK → `kanban_board`, CASCADE |
-| `column_id` | UUID | FK → `kanban_column`, RESTRICT |
-| `title` | TEXT | NOT NULL |
-| `issue_url` | TEXT | NOT NULL, UNIQUE |
-| `github_issue_number` | INTEGER | Nullable, unique per board |
-| `issue_state` | TEXT | NOT NULL, `open` or `closed` |
-| `description` | TEXT | Nullable |
-| `linked_pull_requests` | TEXT[] | Nullable |
-| `sub_issues_completed` | INTEGER | Nullable, `>= 0` |
-| `sub_issues_total` | INTEGER | Nullable, `>= 0` |
-| `priority` | TEXT | Nullable |
-| `estimate` | NUMERIC(10,2) | `>= 0` |
-| `size` | TEXT | Nullable |
-| `position` | INTEGER | NOT NULL, `>= 0` |
-| `created_at` | TIMESTAMPTZ | NOT NULL |
-| `closed_at` | TIMESTAMPTZ | Nullable, not before `created_at` |
-
-보드의 컬럼은 작업 화면상의 위치이고 `issue_state`는 GitHub Issue의 열림/닫힘 상태입니다. 두 값을 분리해 저장합니다.
-
-## `kanban_card_assignee`
-
-카드와 담당자의 N:M 관계를 표현하는 연결 테이블입니다.
-
-| Column | Type | Constraint |
-| --- | --- | --- |
-| `card_id` | UUID | PK, FK → `kanban_card`, CASCADE |
-| `member_id` | UUID | PK, FK → `kanban_member`, CASCADE |
+`kanban_team` → `kanban_member` → `kanban_team_member` → `kanban_board` → `kanban_status`/`kanban_milestone` → `kanban_task` → `kanban_task_assignee` → `kanban_task_status_history`

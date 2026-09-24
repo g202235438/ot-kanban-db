@@ -2,63 +2,20 @@
 
 ```mermaid
 erDiagram
-    KANBAN_TEAM ||--o{ KANBAN_MEMBER : has
+    KANBAN_TEAM ||--o{ KANBAN_TEAM_MEMBER : has
+    KANBAN_MEMBER ||--o{ KANBAN_TEAM_MEMBER : joins
     KANBAN_TEAM ||--o{ KANBAN_BOARD : owns
-    KANBAN_BOARD ||--o{ KANBAN_COLUMN : contains
-    KANBAN_BOARD ||--o{ KANBAN_CARD : manages
-    KANBAN_COLUMN ||--o{ KANBAN_CARD : groups
-    KANBAN_CARD ||--o{ KANBAN_CARD_ASSIGNEE : assigned
-    KANBAN_MEMBER ||--o{ KANBAN_CARD_ASSIGNEE : works_on
-
-    KANBAN_TEAM {
-        uuid team_id PK
-        text team_name
-        text repository_url
-    }
-    KANBAN_MEMBER {
-        uuid member_id PK
-        uuid team_id FK
-        text member_name
-        text github_username
-    }
-    KANBAN_BOARD {
-        uuid board_id PK
-        uuid team_id FK
-        text board_name
-        text github_project_url
-    }
-    KANBAN_COLUMN {
-        uuid column_id PK
-        uuid board_id FK
-        text column_name
-        int position
-    }
-    KANBAN_CARD {
-        uuid card_id PK
-        uuid board_id FK
-        uuid column_id FK
-        int github_issue_number
-        text title
-        text issue_url
-        text issue_state
-        text[] linked_pull_requests
-        int sub_issues_completed
-        int sub_issues_total
-        text priority
-        numeric estimate
-        text size
-        int position
-    }
-    KANBAN_CARD_ASSIGNEE {
-        uuid card_id PK, FK
-        uuid member_id PK, FK
-    }
+    KANBAN_BOARD ||--o{ KANBAN_STATUS : defines
+    KANBAN_BOARD ||--o{ KANBAN_MILESTONE : groups
+    KANBAN_BOARD ||--o{ KANBAN_TASK : contains
+    KANBAN_STATUS ||--o{ KANBAN_TASK : current_status
+    KANBAN_MILESTONE o|--o{ KANBAN_TASK : groups
+    KANBAN_TASK ||--o{ KANBAN_TASK_ASSIGNEE : assigned
+    KANBAN_MEMBER ||--o{ KANBAN_TASK_ASSIGNEE : works_on
+    KANBAN_TASK ||--o{ KANBAN_TASK_STATUS_HISTORY : records
+    KANBAN_MEMBER o|--o{ KANBAN_TASK_STATUS_HISTORY : changes
 ```
 
-## 관계 설명
-
-- 팀 1개는 여러 팀원과 보드를 가집니다.
-- 보드 1개는 여러 상태 컬럼과 카드를 가집니다.
-- 컬럼 1개는 여러 카드를 포함합니다.
-- `column_id`는 보드 위치를, `issue_state`는 GitHub Issue 열림/닫힘 상태를 나타냅니다.
-- 카드와 팀원은 다대다 관계이며 `kanban_card_assignee`가 연결합니다.
+- `status_id`는 보드에서의 위치를, `issue_state`는 GitHub Issue 상태를 나타냅니다.
+- Task와 팀원은 다대다 관계이며 `kanban_task_assignee`가 연결합니다.
+- 상태 이력은 이전 상태, 새 상태, 변경자, 변경 시각을 저장합니다.
