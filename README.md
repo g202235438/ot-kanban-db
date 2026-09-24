@@ -19,7 +19,7 @@ GitHub Project의 보드, 상태 컬럼, 작업 카드, 담당자를 반복 없�
 | 팀원 | `kanban_member` | 카드 담당자 |
 | 프로젝트 보드 | `kanban_board` | GitHub Project |
 | 상태 컬럼 | `kanban_column` | Backlog, Ready, In progress, Done |
-| 작업 카드 | `kanban_card` | GitHub Issue 기반 작업 |
+| 작업 카드 | `kanban_card` | GitHub Issue 기반 작업과 보드 위치 |
 | 카드-담당자 | `kanban_card_assignee` | 다대다 연결 |
 
 ## 샘플 데이터
@@ -33,7 +33,9 @@ GitHub Project의 보드, 상태 컬럼, 작업 카드, 담당자를 반복 없�
 | In progress | 1 |
 | Done | 1 |
 
-원본 담당자 필드가 비어 있어 발표용 한글 샘플 담당자 3명을 추가하고 카드에 역할별로 연결했습니다.
+원본 담당자 필드가 비어 있어 발표용 한글 샘플 담당자 3명을 추가하고 카드에 역할별로 연결했습니다. TSV에 있던 Issue URL, 우선순위, 예상치, 크기, 하위 이슈 진행률 필드도 카드에 저장합니다.
+
+`kanban_column`의 값은 보드에서의 위치이고, `kanban_card.issue_state`는 GitHub Issue의 열림/닫힘 상태입니다. 두 상태를 분리해 카드 이동과 Issue 상태 변경을 독립적으로 관리합니다.
 
 ## 실행
 
@@ -47,4 +49,4 @@ GitHub Project의 보드, 상태 컬럼, 작업 카드, 담당자를 반복 없�
 
 ## 발표용 요약
 
-> GitHub 칸반 화면의 보드·상태·작업·담당자 정보를 Board–Column–Card 구조로 정규화하고, 카드와 담당자의 다대다 관계를 별도 테이블로 분리하여 Supabase에서 조회 가능한 DB로 구현했습니다.
+> GitHub 칸반 화면의 보드·상태·작업·담당자 정보를 Board–Column–Card 구조로 정규화하고, 보드 위치와 Issue 상태를 분리했으며 카드와 담당자의 다대다 관계를 별도 테이블로 분리하여 Supabase에서 조회 가능한 DB로 구현했습니다.

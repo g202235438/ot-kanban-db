@@ -55,10 +55,20 @@
 | `column_id` | UUID | FK → `kanban_column`, RESTRICT |
 | `title` | TEXT | NOT NULL |
 | `issue_url` | TEXT | NOT NULL, UNIQUE |
+| `github_issue_number` | INTEGER | Nullable, unique per board |
+| `issue_state` | TEXT | NOT NULL, `open` or `closed` |
+| `description` | TEXT | Nullable |
+| `linked_pull_requests` | TEXT[] | Nullable |
+| `sub_issues_completed` | INTEGER | Nullable, `>= 0` |
+| `sub_issues_total` | INTEGER | Nullable, `>= 0` |
 | `priority` | TEXT | Nullable |
 | `estimate` | NUMERIC(10,2) | `>= 0` |
 | `size` | TEXT | Nullable |
 | `position` | INTEGER | NOT NULL, `>= 0` |
+| `created_at` | TIMESTAMPTZ | NOT NULL |
+| `closed_at` | TIMESTAMPTZ | Nullable, not before `created_at` |
+
+보드의 컬럼은 작업 화면상의 위치이고 `issue_state`는 GitHub Issue의 열림/닫힘 상태입니다. 두 값을 분리해 저장합니다.
 
 ## `kanban_card_assignee`
 

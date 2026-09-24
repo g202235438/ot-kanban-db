@@ -43,10 +43,23 @@ create table public.kanban_card (
   column_id uuid not null references public.kanban_column(column_id) on delete restrict,
   title text not null,
   issue_url text not null unique,
+  github_issue_number integer,
+  issue_state text not null default 'open' check (issue_state in ('open', 'closed')),
+  description text,
+  linked_pull_requests text[],
+  sub_issues_completed integer,
+  sub_issues_total integer,
   priority text,
   estimate numeric(10,2) check (estimate is null or estimate >= 0),
   size text,
-  position integer not null default 0 check (position >= 0)
+  position integer not null default 0 check (position >= 0),
+  created_at timestamptz not null default now(),
+  closed_at timestamptz,
+  check (sub_issues_completed is null or sub_issues_completed >= 0),
+  check (sub_issues_total is null or sub_issues_total >= 0),
+  check (sub_issues_completed is null or sub_issues_total is null or sub_issues_completed <= sub_issues_total),
+  check (closed_at is null or closed_at >= created_at),
+  unique (board_id, github_issue_number)
 );
 
 create table public.kanban_card_assignee (
@@ -80,23 +93,24 @@ cross join (values
 ) as members(member_name, github_username, department, student_number)
 where team_name = '6조';
 
-insert into public.kanban_card (board_id, column_id, title, issue_url, priority, estimate, size, position)
+insert into public.kanban_card (board_id, column_id, title, issue_url, github_issue_number,
+                                issue_state, priority, estimate, size, position)
 select b.board_id, c.column_id, cards.title, cards.issue_url,
-       cards.priority, cards.estimate, cards.size, cards.position
+       cards.github_issue_number, 'open', cards.priority, cards.estimate, cards.size, cards.position
 from public.kanban_board b
 join public.kanban_column c on c.board_id = b.board_id
 join (values
-  ('Running Scene 구현', 'https://github.com/g202235438/ot/issues/1', 'Backlog', '낮음', 2, 'S', 0),
-  ('Scene Transition 연결', 'https://github.com/g202235438/ot/issues/2', 'Backlog', '높음', 5, 'L', 1),
-  ('캐릭터 크기 및 카메라 구도 QA', 'https://github.com/g202235438/ot/issues/3', 'Backlog', '중간', 3, 'M', 2),
-  ('반응형 및 성능 최적화', 'https://github.com/g202235438/ot/issues/4', 'Backlog', '중간', 5, 'L', 3),
-  ('최종 QA 및 제출 링크 정리', 'https://github.com/g202235438/ot/issues/5', 'Backlog', '높음', 3, 'M', 4),
-  ('Swimming Scene 구현', 'https://github.com/g202235438/ot/issues/6', 'Ready', '낮음', 2, 'S', 0),
-  ('Cycling Scene 구현', 'https://github.com/g202235438/ot/issues/7', 'Ready', '낮음', 2, 'S', 1),
-  ('Fishing Scene 구현', 'https://github.com/g202235438/ot/issues/8', 'Ready', '낮음', 2, 'S', 2),
-  ('Landing Page 기본 구조 및 콘텐츠 연결', 'https://github.com/g202235438/ot/issues/9', 'In progress', '낮음', 2, 'S', 0),
-  ('README 프로젝트 개요 정리', 'https://github.com/g202235438/ot/issues/10', 'Done', '낮음', 2, 'S', 0)
-) as cards(title, issue_url, column_name, priority, estimate, size, position)
+  ('Running Scene 구현', 'https://github.com/g202235438/ot/issues/1', 1, 'Backlog', '낮음', 2, 'S', 0),
+  ('Scene Transition 연결', 'https://github.com/g202235438/ot/issues/2', 2, 'Backlog', '높음', 5, 'L', 1),
+  ('캐릭터 크기 및 카메라 구도 QA', 'https://github.com/g202235438/ot/issues/3', 3, 'Backlog', '중간', 3, 'M', 2),
+  ('반응형 및 성능 최적화', 'https://github.com/g202235438/ot/issues/4', 4, 'Backlog', '중간', 5, 'L', 3),
+  ('최종 QA 및 제출 링크 정리', 'https://github.com/g202235438/ot/issues/5', 5, 'Backlog', '높음', 3, 'M', 4),
+  ('Swimming Scene 구현', 'https://github.com/g202235438/ot/issues/6', 6, 'Ready', '낮음', 2, 'S', 0),
+  ('Cycling Scene 구현', 'https://github.com/g202235438/ot/issues/7', 7, 'Ready', '낮음', 2, 'S', 1),
+  ('Fishing Scene 구현', 'https://github.com/g202235438/ot/issues/8', 8, 'Ready', '낮음', 2, 'S', 2),
+  ('Landing Page 기본 구조 및 콘텐츠 연결', 'https://github.com/g202235438/ot/issues/9', 9, 'In progress', '낮음', 2, 'S', 0),
+  ('README 프로젝트 개요 정리', 'https://github.com/g202235438/ot/issues/10', 10, 'Done', '낮음', 2, 'S', 0)
+) as cards(title, issue_url, github_issue_number, column_name, priority, estimate, size, position)
   on c.column_name = cards.column_name
 where b.github_project_url = 'https://github.com/users/g202235438/projects/1';
 
