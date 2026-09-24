@@ -67,7 +67,50 @@
 
 `kanban_task.status_id`는 보드에서의 위치이고 `kanban_task.issue_state`는 GitHub Issue의 열림/닫힘 상태입니다. 두 상태를 분리해 카드 이동과 Issue 상태 변경을 독립적으로 관리합니다.
 
-## 7. Conceptual ERD
+## 7. 서비스 활용
+
+| 서비스 동작 | DB 처리 |
+| --- | --- |
+| 보드 열기 | `kanban_board`를 찾고 `kanban_status.position` 순서로 상태를 표시합니다. |
+| 카드 표시 | 각 상태의 `kanban_task`를 `position` 순서로 조회합니다. |
+| 카드 이동 | `kanban_task.status_id`와 `position`을 변경하고 상태 이력을 추가합니다. |
+| 담당자 지정 | `kanban_task_assignee`에 Task와 Member 연결을 추가합니다. |
+| 완료 현황 | 상태별 Task 수를 JOIN과 GROUP BY로 집계합니다. |
+
+예를 들어 카드가 Ready에서 In progress로 이동하면 `status_id`만 변경하고, 이전 상태·새 상태·변경자·시각은 `kanban_task_status_history`에 기록합니다. GitHub Issue가 닫혔는지는 `issue_state`에서 별도로 확인합니다.
+
+## 8. 실제 데이터 적재 결과
+
+| 테이블 | 행 수 |
+| --- | ---: |
+| `kanban_team` | 1 |
+| `kanban_member` | 3 |
+| `kanban_team_member` | 3 |
+| `kanban_board` | 1 |
+| `kanban_status` | 4 |
+| `kanban_milestone` | 1 |
+| `kanban_task` | 10 |
+| `kanban_task_assignee` | 10 |
+| `kanban_task_status_history` | 10 |
+
+원본 분석과 Entity 분리 과정은 [`docs/source-data-analysis.md`](docs/source-data-analysis.md)에 정리했습니다.
+
+## 9. JOIN으로 원본 보드 재현
+
+[`scripts/reproduce-board.sql`](scripts/reproduce-board.sql)은 Board → Status → Task → Assignee를 JOIN해 원본 보드처럼 상태별 카드 목록을 재현합니다.
+
+검증 결과:
+
+| 상태 | Task 수 |
+| --- | ---: |
+| Backlog | 5 |
+| Ready | 3 |
+| In progress | 1 |
+| Done | 1 |
+
+JOIN 결과 화면은 [`docs/evidence/`](docs/evidence/)에 보관합니다.
+
+## 10. Conceptual ERD
 
 ```mermaid
 erDiagram
@@ -155,17 +198,19 @@ erDiagram
 
 상세 ERD 문서는 [`docs/kanban-erd.md`](docs/kanban-erd.md)에서 확인할 수 있습니다.
 
-## 8. 실행 및 검증
+## 11. 실행 및 검증
 
 1. Supabase SQL Editor에서 [`migrations/002_rebuild_kanban_schema.sql`](migrations/002_rebuild_kanban_schema.sql)을 실행합니다.
 2. [`scripts/verify.sql`](scripts/verify.sql)을 실행해 행 수와 상태별 Task 수를 확인합니다.
 3. [`docs/kanban-erd.md`](docs/kanban-erd.md)에서 Conceptual ERD를 확인합니다.
 4. 상세 명세는 [`db.spec.md`](db.spec.md), 구조 설명은 [`architecture.md`](architecture.md), 정규화 설명은 [`docs/database-design.md`](docs/database-design.md)에서 확인합니다.
+5. 원본 분석은 [`docs/source-data-analysis.md`](docs/source-data-analysis.md), 보드 재현 JOIN은 [`scripts/reproduce-board.sql`](scripts/reproduce-board.sql)에서 확인합니다.
+6. 화면 캡처는 [`docs/evidence/README.md`](docs/evidence/README.md)의 파일명과 기준에 맞춰 추가합니다.
 
-## 9. 보안
+## 12. 보안
 
 실제 Supabase 키, 비밀번호, `.env` 파일은 저장소에 포함하지 않습니다. `003_enable_public_read_rls.sql`에서 공개 보드 스냅샷에 대한 `SELECT`만 허용하고 `INSERT`, `UPDATE`, `DELETE`는 차단했습니다. 실제 팀 전용 서비스로 확장할 때는 공개 정책을 팀 멤버십 정책으로 좁혀야 합니다.
 
-## 10. 프로젝트 요약
+## 13. 프로젝트 요약
 
 > 실제 GitHub Project 데이터를 바탕으로 팀·보드·상태·Milestone·Task·담당자·상태이력을 정규화하고, Issue 상태와 보드 상태를 분리해 Supabase에서 조회 가능한 간반 DB로 구현했습니다.
