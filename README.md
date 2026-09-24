@@ -67,23 +67,111 @@
 
 `kanban_task.status_id`는 보드에서의 위치이고 `kanban_task.issue_state`는 GitHub Issue의 열림/닫힘 상태입니다. 두 상태를 분리해 카드 이동과 Issue 상태 변경을 독립적으로 관리합니다.
 
-## 7. 실행 및 검증
+## 7. Conceptual ERD
+
+```mermaid
+erDiagram
+    KANBAN_TEAM ||--o{ KANBAN_TEAM_MEMBER : has
+    KANBAN_MEMBER ||--o{ KANBAN_TEAM_MEMBER : joins
+    KANBAN_TEAM ||--o{ KANBAN_BOARD : owns
+    KANBAN_BOARD ||--o{ KANBAN_STATUS : defines
+    KANBAN_BOARD ||--o{ KANBAN_MILESTONE : groups
+    KANBAN_BOARD ||--o{ KANBAN_TASK : contains
+    KANBAN_STATUS ||--o{ KANBAN_TASK : places
+    KANBAN_MILESTONE o|--o{ KANBAN_TASK : groups
+    KANBAN_TASK ||--o{ KANBAN_TASK_ASSIGNEE : assigned
+    KANBAN_MEMBER ||--o{ KANBAN_TASK_ASSIGNEE : works_on
+    KANBAN_TASK ||--o{ KANBAN_TASK_STATUS_HISTORY : records
+    KANBAN_MEMBER o|--o{ KANBAN_TASK_STATUS_HISTORY : changes
+
+    KANBAN_TEAM {
+        uuid team_id PK
+        text team_name UK
+        text repository_url
+    }
+    KANBAN_MEMBER {
+        uuid member_id PK
+        text member_name
+        text github_username UK
+        text department
+        text student_number
+    }
+    KANBAN_BOARD {
+        uuid board_id PK
+        uuid team_id FK
+        text board_name
+        text github_project_url UK
+    }
+    KANBAN_STATUS {
+        uuid status_id PK
+        uuid board_id FK
+        text status_name
+        int position
+        boolean is_done
+    }
+    KANBAN_MILESTONE {
+        uuid milestone_id PK
+        uuid board_id FK
+        text title
+        text state
+        date due_date
+    }
+    KANBAN_TASK {
+        uuid task_id PK
+        uuid board_id FK
+        uuid status_id FK
+        uuid milestone_id FK
+        int github_issue_number
+        text title
+        text issue_state
+        text priority
+        numeric estimate
+        text size
+        int position
+    }
+    KANBAN_TASK_ASSIGNEE {
+        uuid task_id PK, FK
+        uuid member_id PK, FK
+        timestamptz assigned_at
+    }
+    KANBAN_TASK_STATUS_HISTORY {
+        uuid history_id PK
+        uuid task_id FK
+        uuid from_status_id FK
+        uuid to_status_id FK
+        uuid changed_by_member_id FK
+        timestamptz changed_at
+    }
+```
+
+### 관계 설명
+
+- 하나의 팀은 여러 팀원과 보드를 가집니다.
+- 하나의 보드는 여러 상태, Milestone, Task를 가집니다.
+- `kanban_task.status_id`는 보드에서의 현재 위치입니다.
+- `kanban_task.issue_state`는 GitHub Issue 자체의 `open/closed` 상태입니다.
+- Task와 팀원은 다대다 관계이며 `kanban_task_assignee`가 연결합니다.
+- 카드 이동은 `kanban_task_status_history`에 이전 상태, 새 상태, 변경자, 변경 시각으로 기록합니다.
+
+상세 ERD 문서는 [`docs/kanban-erd.md`](docs/kanban-erd.md)에서 확인할 수 있습니다.
+
+## 8. 실행 및 검증
 
 1. Supabase SQL Editor에서 [`migrations/002_rebuild_kanban_schema.sql`](migrations/002_rebuild_kanban_schema.sql)을 실행합니다.
 2. [`scripts/verify.sql`](scripts/verify.sql)을 실행해 행 수와 상태별 Task 수를 확인합니다.
 3. [`docs/kanban-erd.md`](docs/kanban-erd.md)의 Conceptual ERD를 발표자료에 포함합니다.
 4. 상세 설계는 [`db.spec.md`](db.spec.md), 구조 설명은 [`architecture.md`](architecture.md)에서 확인합니다.
 
-## 8. 보안
+## 9. 보안
 
 실제 Supabase 키, 비밀번호, `.env` 파일은 저장소에 포함하지 않습니다. `003_enable_public_read_rls.sql`에서 공개 보드 스냅샷에 대한 `SELECT`만 허용하고 `INSERT`, `UPDATE`, `DELETE`는 차단했습니다. 실제 팀 전용 서비스로 확장할 때는 공개 정책을 팀 멤버십 정책으로 좁혀야 합니다.
 
-## 9. 참고한 설계
+## 10. 참고한 설계
 
 - [cones-db-design](https://github.com/Hamchaelim/cones-db-design)
 - [team5-kanban-db](https://github.com/W0ongDang/team5-kanban-db)
 - [asps-3](https://github.com/JooJeongwon/asps-3)
 
-## 발표용 요약
+## 11. 발표용 요약
 
 > 실제 GitHub Project 데이터를 바탕으로 팀·보드·상태·Milestone·Task·담당자·상태이력을 정규화하고, Issue 상태와 보드 상태를 분리해 Supabase에서 조회 가능한 간반 DB로 구현했습니다.
