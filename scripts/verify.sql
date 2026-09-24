@@ -1,4 +1,4 @@
--- Supabase SQL Editor에서 실행하는 제출용 검증 쿼리
+-- Supabase SQL Editor에서 실행하는 검증 쿼리
 select 'kanban_team' as table_name, count(*) as row_count from public.kanban_team
 union all select 'kanban_member', count(*) from public.kanban_member
 union all select 'kanban_team_member', count(*) from public.kanban_team_member

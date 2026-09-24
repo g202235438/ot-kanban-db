@@ -2,7 +2,7 @@
 
 ## 범위
 
-이 저장소는 `g202235438/ot`의 GitHub Project 스냅샷을 Supabase PostgreSQL로 저장합니다. GitHub 내부 DB 전체를 복제하지 않고 칸반 화면에 필요한 보드·상태·Issue·담당자 관계를 정규화합니다.
+이 프로젝트는 `g202235438/ot`의 GitHub Project 스냅샷을 Supabase PostgreSQL로 저장합니다. GitHub 내부 DB 전체를 복제하지 않고 칸반 화면에 필요한 보드·상태·Issue·담당자 관계를 정규화합니다.
 
 ## Entity 관계
 

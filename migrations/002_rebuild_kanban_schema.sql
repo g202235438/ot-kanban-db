@@ -1,5 +1,4 @@
--- Final schema based on cones-db-design, team5-kanban-db, and asps-3.
--- This migration recreates the project-specific tables and loads sample data.
+-- Final Kanban schema and sample data migration.
 drop table if exists public.kanban_card_assignee cascade;
 drop table if exists public.kanban_task_status_history cascade;
 drop table if exists public.kanban_task_assignee cascade;
@@ -111,7 +110,7 @@ values
   ('박디자인', 'designer6', '디지털콘텐츠학과', '20220003');
 insert into public.kanban_team_member (team_id, member_id, role)
 select t.team_id, m.member_id,
-  case m.github_username when 'g202235438' then '기획·발표'
+  case m.github_username when 'g202235438' then '기획'
     when 'developer6' then '개발' else '디자인·QA' end
 from public.kanban_team t cross join public.kanban_member m
 where t.team_name = '6조';
@@ -127,7 +126,7 @@ cross join (values
   ('In progress', 2, false), ('Done', 3, true)
 ) v(status_name, position, is_done);
 insert into public.kanban_milestone (board_id, title, state)
-select board_id, 'TRI-MOTION + FISHING 제출 완료', 'open'
+select board_id, 'TRI-MOTION + FISHING 개발 완료', 'open'
 from public.kanban_board;
 
 insert into public.kanban_task
