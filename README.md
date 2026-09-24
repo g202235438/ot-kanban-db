@@ -160,7 +160,7 @@ erDiagram
 1. Supabase SQL Editor에서 [`migrations/002_rebuild_kanban_schema.sql`](migrations/002_rebuild_kanban_schema.sql)을 실행합니다.
 2. [`scripts/verify.sql`](scripts/verify.sql)을 실행해 행 수와 상태별 Task 수를 확인합니다.
 3. [`docs/kanban-erd.md`](docs/kanban-erd.md)에서 Conceptual ERD를 확인합니다.
-4. 상세 설계는 [`db.spec.md`](db.spec.md), 구조 설명은 [`architecture.md`](architecture.md)에서 확인합니다.
+4. 상세 명세는 [`db.spec.md`](db.spec.md), 구조 설명은 [`architecture.md`](architecture.md), 정규화 설명은 [`docs/database-design.md`](docs/database-design.md)에서 확인합니다.
 
 ## 9. 보안
 
