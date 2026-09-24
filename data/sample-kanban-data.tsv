@@ -1,0 +1,11 @@
+상태	작업 카드	Issue URL	우선순위	예상치	크기	담당자
+Backlog	Running Scene 구현	https://github.com/g202235438/ot/issues/1	낮음	2	S	이개발
+Backlog	Scene Transition 연결	https://github.com/g202235438/ot/issues/2	높음	5	L	이개발
+Backlog	캐릭터 크기 및 카메라 구도 QA	https://github.com/g202235438/ot/issues/3	중간	3	M	박디자인
+Backlog	반응형 및 성능 최적화	https://github.com/g202235438/ot/issues/4	중간	5	L	박디자인
+Backlog	최종 QA 및 제출 링크 정리	https://github.com/g202235438/ot/issues/5	높음	3	M	박디자인
+Ready	Swimming Scene 구현	https://github.com/g202235438/ot/issues/6	낮음	2	S	이개발
+Ready	Cycling Scene 구현	https://github.com/g202235438/ot/issues/7	낮음	2	S	박디자인
+Ready	Fishing Scene 구현	https://github.com/g202235438/ot/issues/8	낮음	2	S	박디자인
+In progress	Landing Page 기본 구조 및 콘텐츠 연결	https://github.com/g202235438/ot/issues/9	낮음	2	S	김기획
+Done	README 프로젝트 개요 정리	https://github.com/g202235438/ot/issues/10	낮음	2	S	김기획
