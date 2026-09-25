@@ -178,7 +178,7 @@ erDiagram
 | JOIN으로 원본 보드 재현 | [`scripts/reproduce-board.sql`](scripts/reproduce-board.sql) | 완료 |
 | 저장소 Issue 39건과 View 1 카드 19건 범위 검증 | [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
 | 상태별·전체·담당자 수·프로젝트 일치 검증 | [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
-| Issue 본문·댓글·Timeline·Status 이력 구조 | [`schema.sql`](schema.sql), [`migrations/005_issue_details_history_and_readonly_rls.sql`](migrations/005_issue_details_history_and_readonly_rls.sql) | 본문·댓글 적재, Timeline 원본 보류 |
+| Issue 본문·댓글·Timeline·Status 이력 구조 | [`schema.sql`](schema.sql), [`scripts/verify-timeline.sql`](scripts/verify-timeline.sql) | 본문·댓글 적재, Timeline 출처 미확인 |
 | 원본 보드·Supabase·JOIN 화면 캡처 | [`docs/evidence/README.md`](docs/evidence/README.md) | 캡처 필요 |
 
 ## 실행 순서
@@ -197,10 +197,15 @@ erDiagram
 기록했습니다.
 
 Issue 본문은 19건, 댓글은 GitHub API에서 확인된 15건을 Supabase에 적재했습니다.
-19개 카드의 Timeline 이벤트 179건과 그중 `project_v2_item_status_changed`
-40건은 [`data/raw/cones-view1-events.json`](data/raw/cones-view1-events.json)에
-원본으로 보존했습니다. 해당 응답에는 카드 식별자와 상태 변경 전·후 값이
-일관되게 포함되지 않아, DB 이력 행을 임의로 만들지 않았습니다.
+19개 Issue 요청에서 수집된 Timeline 이벤트 179건은
+[`data/raw/cones-view1-events.json`](data/raw/cones-view1-events.json)에
+보존했지만, 저장된 이벤트 객체에는 출처 Issue 번호나 URL이 기록되지 않았습니다.
+이벤트 URL도 `/issues/events/{event_id}` 형식이어서 19개 `tasks`와 정확히
+매칭할 수 없습니다. 따라서 Timeline 이벤트 적재 건수는 0건이고, 179건을
+출처 미확인으로 제외했습니다. 그중 `project_v2_item_status_changed` 40건도
+변경 전·후 Status 값이 없어 `project_status_history`에 추측해서 넣지 않았습니다.
+상세 검증은 [`scripts/verify-timeline.sql`](scripts/verify-timeline.sql)에
+남겼습니다.
 
 ### RLS와 앱 권한
 
@@ -212,12 +217,19 @@ Issue 본문은 19건, 댓글은 GitHub API에서 확인된 15건을 Supabase에
 service_role 키를 넣지 않습니다.
 
 팀원 앱은 [`asps-3`](C:/Users/user/AppData/Roaming/Code/User/asps-3)에서
-`python -m http.server 4173`로 로컬 실행을 확인했고, 실제 live Supabase
-데이터로 19 items · 3 active · 16 done이 표시되었습니다. 저장소의
-`npm run dev`는 Windows 환경에서 `python3` 명령이 없어 동작하지 않아,
-동일한 표준 Python 서버 명령으로 확인했습니다. 현재 앱 코드에는 카드 이동
-PATCH가 남아 있으나 RLS에서 차단되며, 최종 앱은 읽기 전용 이동 UI로 맞추는
-것이 필요합니다.
+Windows 명령 `python -m http.server 4173`로 로컬 실행을 확인했고, 실제 live Supabase
+데이터로 19 items · 3 active · 16 done이 표시되었습니다. 저장소의 `npm run dev`는 Unix형 `python3` 명령을 사용하므로 Windows에서는
+동작하지 않을 수 있습니다. 팀원에게는 아래 파일 변경을 전달해야 합니다.
+
+- `app.js`: `issue_details`, `issue_comments` 조회와 상세 화면 표시 추가,
+  카드 상태 변경 PATCH 제거 및 읽기 전용 안내
+- `README.md`: Windows 실행 명령과 읽기 전용 DB 사용법 추가
+
+적용 방법은 팀원 저장소에서 두 파일을 교체한 뒤
+`python -m http.server 4173`을 실행하는 것입니다. 브라우저에서
+`http://localhost:4173`을 열고 `19 items · 3 active · 16 done · live data`와
+카드 본문·댓글을 확인합니다. `config.js`에는 publishable key만 두고
+service_role key는 넣지 않습니다.
 
 ## 실제 적용 상태
 
@@ -225,7 +237,7 @@ PATCH가 남아 있으나 RLS에서 차단되며, 최종 앱은 읽기 전용 �
 - 로컬 원본 분석: 완료
 - Supabase 실제 적용: schema와 project/user/status/milestone 기준행 적용 완료
 - Supabase Issue/task seed: 최종 TSV의 19개 카드 적용 완료
-- RLS: 인증 정책을 검증하지 않아 미적용
+- RLS: anon/authenticated SELECT만 허용, 쓰기 권한 차단
 - Project 카드 Status/순서 대조: 최종 TSV 기준 확인
 - 실제 Supabase Table Editor / 원본 보드 / JOIN 결과 캡처: [`docs/evidence/README.md`](docs/evidence/README.md)의 체크리스트에 따라 발표용으로 필요
 
