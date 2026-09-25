@@ -30,9 +30,10 @@ CONES GitHub Issues와 GitHub Projects 칸반 보드를 관계형 데이터베�
 
 ### View 1 보드 snapshot
 
-첨부된 [`CONES_board_status_view1_2026-09-25.txt`](data/raw/CONES_board_status_view1_2026-09-25.txt)는
-2026-09-25에 공개 View 1 화면에서 확인한 목록입니다. GitHub CSV export나
-전체 API 응답이 아닙니다.
+최종 원본은 [`cones-project-view1.tsv`](data/raw/cones-project-view1.tsv)입니다.
+2026-09-25에 확인한 공개 View 1에서 제공된 TSV의 19행을 칸반 카드 범위로
+사용했습니다. TSV의 `URL`에서 Issue 번호를 추출하고 `Status`를 칸반
+상태로 적재했습니다.
 
 | Status | status_position | 카드 수 |
 | --- | ---: | ---: |
@@ -43,18 +44,10 @@ CONES GitHub Issues와 GitHub Projects 칸반 보드를 관계형 데이터베�
 확인된 보드 Task는 Issue `#9, #13, #39`와 `#3, #1, #2, #4, #5, #6, #7,
 #10, #11, #12, #32, #33, #34, #35, #36, #37`의 총 19건입니다.
 `card_position`은 첨부 목록의 열 내부 표시 순서를 저장합니다.
-Project item ID는 확인되지 않아 NULL입니다.
-
-## 확인되지 않은 데이터
-
-현재 허용된 GitHub Project 접근에서는 Project 페이지가
-`You can’t perform that action at this time`을 반환했습니다. 따라서 다음은
-아직 DB에 추측으로 넣지 않았습니다.
-
-- 실제 Project 카드 19건의 정확한 포함 Issue 번호
-- 카드별 Project item ID
-- 카드별 Todo / In Progress / Done 상태
-- 같은 상태 안에서의 카드 표시 순서
+Project item ID는 TSV에 없으므로 추측하지 않고 NULL로 유지했습니다.
+Issue의 `open`/`closed`와 Milestone은 원본 Issues snapshot에서 별도로
+확인했습니다. 저장소 전체 Issue 39건 중 TSV에 포함된 19건만 `tasks`에
+적재했습니다.
 
 `discrepancy-report.md`에 참고 JSON의 `tasks: []`, orphan assignment,
 Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기록했습니다.
@@ -72,8 +65,7 @@ Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기�
 
 `tasks.issue_state`는 GitHub Issue의 `open`/`closed`이고,
 `tasks.status_id`는 칸반 열입니다. 두 값을 하나의 상태 문자열로 합치지
-않았습니다. Project 데이터를 읽지 못한 동안에는 `status_id`와
-`github_project_item_id`를 NULL로 보존합니다.
+않았습니다. `github_project_item_id`는 TSV에 없어 NULL입니다.
 
 개념 ERD는 [`docs/kanban-erd.md`](docs/kanban-erd.md)에 있습니다.
 
@@ -83,24 +75,20 @@ Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기�
 2. [`seed.sql`](seed.sql)을 실행합니다. Issue, 담당자, Milestone snapshot은
    재실행해도 중복되지 않도록 작성했습니다.
 3. [`scripts/verify.sql`](scripts/verify.sql)을 실행합니다.
-4. Project item export를 확보한 후 카드별 `status_id`,
-   `github_project_item_id`, 순서를 추가합니다.
-5. [`scripts/reproduce-board.sql`](scripts/reproduce-board.sql)을 실행해
+4. [`scripts/reproduce-board.sql`](scripts/reproduce-board.sql)을 실행해
    상태별 카드와 담당자를 조회합니다.
 
-현재 seed는 첨부된 View 1의 19개 카드와 저장소 Issue 메타데이터를
-재현합니다. 상태별 검증 결과는 Todo 0건, In Progress 3건, Done 16건,
-총 19건입니다. 이 결과는 첨부된 오늘의 화면 관찰과 대조한 것이며,
-GitHub Projects CSV export나 전체 API payload를 의미하지 않습니다.
+현재 seed는 최종 TSV의 19개 카드와 저장소 Issue 메타데이터를 재현합니다.
+상태별 검증 결과는 Todo 0건, In Progress 3건, Done 16건, 총 19건입니다.
 
 ## 실제 적용 상태
 
 - 설계 파일: 작성 완료
 - 로컬 원본 분석: 완료
 - Supabase 실제 적용: schema와 project/user/status/milestone 기준행 적용 완료
-- Supabase Issue/task seed: Project 카드 검증 전이라 미적용
+- Supabase Issue/task seed: 최종 TSV의 19개 카드 적용 완료
 - RLS: 인증 정책을 검증하지 않아 미적용
-- Project 카드 Status/순서 대조: 2026-09-25 View 1 첨부 목록 기준 확인
+- Project 카드 Status/순서 대조: 최종 TSV 기준 확인
 - 실제 Supabase Table Editor / 원본 보드 캡처: 발표용으로 필요
 
 비밀키, service role key, PAT는 저장소와 문서에 넣지 않습니다.

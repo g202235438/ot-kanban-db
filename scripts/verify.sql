@@ -44,6 +44,22 @@ from public.tasks t
 join public.projects p on p.project_id = t.project_id
 where p.github_repo_full_name = 'seune-h0203/cones';
 
+select count(*) as one_row_per_task_join
+from (
+  select t.task_id
+  from public.tasks t
+  join public.projects p on p.project_id = t.project_id
+  left join public.task_assignees ta on ta.task_id = t.task_id
+  where p.github_repo_full_name = 'seune-h0203/cones'
+  group by t.task_id
+) board_rows;
+
+select count(*) as board_assignment_rows
+from public.task_assignees ta
+join public.tasks t on t.task_id = ta.task_id
+join public.projects p on p.project_id = t.project_id
+where p.github_repo_full_name = 'seune-h0203/cones';
+
 select
   t.github_issue_number,
   t.title,

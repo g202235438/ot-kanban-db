@@ -1,0 +1,20 @@
+Title	URL	Assignees	Status	Linked pull requests	Sub-issues progress
+[QA] Animation 및 Interaction 최종 테스트	https://github.com/seune-h0203/cones/issues/9	Hamchaelim	In Progress		
+[PRESENTATION] 3분 발표 및 Demo 준비	https://github.com/seune-h0203/cones/issues/13	seune-h0203	In Progress		
+[PRESENTATION] 발표 대본 준비	https://github.com/seune-h0203/cones/issues/39	ohoobae	In Progress		
+[FE] 전체 페이지 콘텐츠 연결 검수	https://github.com/seune-h0203/cones/issues/3	qkrtpfls03, seune-h0203	Done		
+[PLAN] CONES 프로젝트 최종 작업 관리	https://github.com/seune-h0203/cones/issues/1	qkrtpfls03, seune-h0203	Done		
+[CONTENT] 아티스트 정보 최종 검수	https://github.com/seune-h0203/cones/issues/2	ohoobae, qkrtpfls03	Done		
+[FE] 이미지 및 Asset 경로 최종 검수	https://github.com/seune-h0203/cones/issues/4	Hamchaelim, ohoobae	Done		
+[FE] Teaser Video Manifest 최종 검수	https://github.com/seune-h0203/cones/issues/5	ohoobae	Done		
+[FE] GitHub Pages Routing 최종 검수	https://github.com/seune-h0203/cones/issues/6	qkrtpfls03, seune-h0203	Done		
+[QA] Desktop 반응형 테스트	https://github.com/seune-h0203/cones/issues/7	Hamchaelim	Done		
+[QA] Accessibility 최종 검수	https://github.com/seune-h0203/cones/issues/10	Hamchaelim	Done		
+[QA] Production Build 테스트	https://github.com/seune-h0203/cones/issues/11	Hamchaelim	Done		
+[DEPLOY] GitHub Pages 최종 배포 확인	https://github.com/seune-h0203/cones/issues/12	Hamchaelim	Done		
+[BE] Supabase 커머스 백엔드(스키마·RLS·RPC) 구축	https://github.com/seune-h0203/cones/issues/32	ohoobae, seune-h0203	Done		
+[FE] Shop/Cart/Checkout/Order 커머스 프론트엔드 구현	https://github.com/seune-h0203/cones/issues/33	qkrtpfls03, seune-h0203	Done		
+[DB] order_items 이미지 컬럼 추가 및 주문 데이터 마이그레이션	https://github.com/seune-h0203/cones/issues/34	seune-h0203	Done		
+[FIX] 라우팅 서브패스 및 이미지 경로 버그 수정	https://github.com/seune-h0203/cones/issues/35	seune-h0203	Done		
+[DEVOPS] GitHub Actions 배포 워크플로 Supabase 환경변수 연동	https://github.com/seune-h0203/cones/issues/36	seune-h0203	Done		
+[DOCS] README 구조 개편 및 멤버 데이터 정합성 수정	https://github.com/seune-h0203/cones/issues/37	seune-h0203	Done		
