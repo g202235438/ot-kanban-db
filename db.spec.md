@@ -19,6 +19,11 @@ board cards. Issue state, assignees, and optional Milestone are joined from
   `github_issue_number` is unique within a project.
 - `task_assignees`: Task–User many-to-many relation with composite primary key
   `(task_id, user_id)`.
+- `issue_details`: One-to-one Issue body and source metadata for each View 1 task.
+- `issue_comments`: Verified Issue comments connected to a task.
+- `issue_timeline_events`: Timeline event structure with source URL and raw metadata.
+- `project_status_history`: Separate Project status history structure. Before/after
+  values remain nullable and unconfirmed unless the source explicitly provides them.
 
 ## Integrity rules
 
@@ -27,6 +32,8 @@ board cards. Issue state, assignees, and optional Milestone are joined from
 - Deleting a project cascades to its statuses, milestones, and tasks.
 - Deleting a task cascades to assignments.
 - Deleting a user cascades to assignment rows.
+- Browser roles receive SELECT policies only. No anon/authenticated write policy
+  exists on any public table.
 
 ## Applied snapshot
 

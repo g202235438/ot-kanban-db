@@ -74,6 +74,10 @@ Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기�
 | `milestones` | GitHub Milestone |
 | `tasks` | Issue 원본과 Project 카드 정보 |
 | `task_assignees` | Task–User 다대다 관계, 복합 PK |
+| `issue_details` | 19개 카드의 Issue 본문·원본 작성자·시각 |
+| `issue_comments` | 확인된 Issue 댓글 15건 |
+| `issue_timeline_events` | Issue Timeline 원본 이벤트 구조 |
+| `project_status_history` | Project Status 변경 이력 구조 |
 
 `tasks.issue_state`는 GitHub Issue의 `open`/`closed`이고,
 `tasks.status_id`는 칸반 열입니다. 두 값을 하나의 상태 문자열로 합치지
@@ -151,6 +155,14 @@ erDiagram
   핵심 테이블에서 제외했습니다.
 - 각 독립 엔터티는 단일 PK를 사용하고, 연결 엔터티는
   `(task_id, user_id)` 복합 PK를 사용합니다.
+- Issue 본문과 댓글은 `tasks`에 반복 저장하지 않고 상세·댓글 테이블로
+  분리했습니다. 댓글은 카드별 Task에 연결되며 작성자와 작성·수정 시각을
+  보존합니다.
+- GitHub Issue Timeline과 GitHub Project Status 변경은 별도 개념입니다.
+  `issue_timeline_events`와 `project_status_history` 구조를 준비했지만,
+  현재 확인한 Project status 이벤트 payload에는 변경 전·후 값이 없어
+  상태 이력은 `unconfirmed`/미확인으로 구분합니다. 값을 추정해 넣지
+  않았습니다.
 
 ### 과제 기준 확인표
 
@@ -166,6 +178,7 @@ erDiagram
 | JOIN으로 원본 보드 재현 | [`scripts/reproduce-board.sql`](scripts/reproduce-board.sql) | 완료 |
 | 저장소 Issue 39건과 View 1 카드 19건 범위 검증 | [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
 | 상태별·전체·담당자 수·프로젝트 일치 검증 | [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
+| Issue 본문·댓글·Timeline·Status 이력 구조 | [`schema.sql`](schema.sql), [`migrations/005_issue_details_history_and_readonly_rls.sql`](migrations/005_issue_details_history_and_readonly_rls.sql) | 본문·댓글 적재, Timeline 원본 보류 |
 | 원본 보드·Supabase·JOIN 화면 캡처 | [`docs/evidence/README.md`](docs/evidence/README.md) | 캡처 필요 |
 
 ## 실행 순서
@@ -182,6 +195,29 @@ erDiagram
 프로젝트-상태 참조 검증 결과는 불일치 0건이며, 마이그레이션은
 [`migrations/004_enforce_project_status_scope.sql`](migrations/004_enforce_project_status_scope.sql)에
 기록했습니다.
+
+Issue 본문은 19건, 댓글은 GitHub API에서 확인된 15건을 Supabase에 적재했습니다.
+19개 카드의 Timeline 이벤트 179건과 그중 `project_v2_item_status_changed`
+40건은 [`data/raw/cones-view1-events.json`](data/raw/cones-view1-events.json)에
+원본으로 보존했습니다. 해당 응답에는 카드 식별자와 상태 변경 전·후 값이
+일관되게 포함되지 않아, DB 이력 행을 임의로 만들지 않았습니다.
+
+### RLS와 앱 권한
+
+기존 6개 테이블은 팀원 변경 전 RLS가 비활성화되어 있었습니다. 현재는 기존
+테이블과 상세·이력 테이블 모두 RLS를 활성화하고 `anon` 및 `authenticated`
+역할에 `SELECT` 정책만 둡니다. `INSERT`·`UPDATE`·`DELETE` 정책은 만들지
+않았으므로 브라우저의 publishable/anon 클라이언트는 조회만 할 수 있습니다.
+관리 작업은 Supabase 대시보드 또는 별도 관리자 경로에서 수행하며, 브라우저에
+service_role 키를 넣지 않습니다.
+
+팀원 앱은 [`asps-3`](C:/Users/user/AppData/Roaming/Code/User/asps-3)에서
+`python -m http.server 4173`로 로컬 실행을 확인했고, 실제 live Supabase
+데이터로 19 items · 3 active · 16 done이 표시되었습니다. 저장소의
+`npm run dev`는 Windows 환경에서 `python3` 명령이 없어 동작하지 않아,
+동일한 표준 Python 서버 명령으로 확인했습니다. 현재 앱 코드에는 카드 이동
+PATCH가 남아 있으나 RLS에서 차단되며, 최종 앱은 읽기 전용 이동 UI로 맞추는
+것이 필요합니다.
 
 ## 실제 적용 상태
 

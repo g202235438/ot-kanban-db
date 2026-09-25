@@ -6,6 +6,10 @@ union all select 'statuses', count(*) from public.statuses
 union all select 'milestones', count(*) from public.milestones
 union all select 'tasks', count(*) from public.tasks
 union all select 'task_assignees', count(*) from public.task_assignees
+union all select 'issue_details', count(*) from public.issue_details
+union all select 'issue_comments', count(*) from public.issue_comments
+union all select 'issue_timeline_events', count(*) from public.issue_timeline_events
+union all select 'project_status_history', count(*) from public.project_status_history
 order by table_name;
 
 select github_issue_number, title
@@ -81,6 +85,18 @@ from public.task_assignees ta
 join public.tasks t on t.task_id = ta.task_id
 join public.projects p on p.project_id = t.project_id
 where p.github_repo_full_name = 'seune-h0203/cones';
+
+select
+  (select count(*) from public.issue_details) as issue_detail_rows,
+  (select count(*) from public.issue_comments) as issue_comment_rows,
+  (select count(*) from public.issue_timeline_events) as timeline_event_rows,
+  (select count(*) from public.project_status_history) as status_history_rows;
+
+select
+  19 as expected_view1_cards,
+  39 as repository_issue_snapshot,
+  20 as excluded_repository_issues,
+  (select count(*) from public.tasks) as stored_view1_cards;
 
 select
   t.github_issue_number,
