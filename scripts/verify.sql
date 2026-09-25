@@ -19,6 +19,26 @@ left join public.tasks t on t.task_id = ta.task_id
 left join public.users u on u.user_id = ta.user_id
 where t.task_id is null or u.user_id is null;
 
+select count(*) as mismatched_task_status_projects
+from public.tasks t
+join public.statuses s
+  on s.status_id = t.status_id
+where t.project_id <> s.project_id;
+
+select
+  39 as repository_issue_snapshot_count,
+  19 as view1_card_count,
+  39 - 19 as excluded_repository_issues,
+  (select count(*) from public.tasks t
+   join public.projects p on p.project_id = t.project_id
+   where p.github_repo_full_name = 'seune-h0203/cones') as stored_task_count;
+
+select count(*) as invalid_same_project_status_references
+from public.tasks t
+left join public.statuses s
+  on (s.project_id, s.status_id) = (t.project_id, t.status_id)
+where t.status_id is not null and s.status_id is null;
+
 select project_id, github_issue_number, count(*) as duplicate_count
 from public.tasks
 group by project_id, github_issue_number
@@ -26,7 +46,8 @@ having count(*) > 1;
 
 select s.status_name, count(t.task_id) as task_count
 from public.statuses s
-left join public.tasks t on t.status_id = s.status_id
+left join public.tasks t
+  on (t.project_id, t.status_id) = (s.project_id, s.status_id)
 group by s.status_id, s.status_name, s.position
 order by s.position;
 
@@ -34,7 +55,8 @@ select
   s.status_name,
   count(t.task_id) as task_count
 from public.statuses s
-left join public.tasks t on t.status_id = s.status_id
+left join public.tasks t
+  on (t.project_id, t.status_id) = (s.project_id, s.status_id)
 where s.project_id = (select project_id from public.projects where github_repo_full_name = 'seune-h0203/cones')
 group by s.status_id, s.status_name, s.position
 order by s.position;
@@ -68,7 +90,8 @@ select
   string_agg(u.github_username, ', ' order by u.github_username) as assignees,
   m.title as milestone
 from public.tasks t
-left join public.statuses s on s.status_id = t.status_id
+left join public.statuses s
+  on (s.project_id, s.status_id) = (t.project_id, t.status_id)
 left join public.task_assignees ta on ta.task_id = t.task_id
 left join public.users u on u.user_id = ta.user_id
 left join public.milestones m on m.milestone_id = t.milestone_id

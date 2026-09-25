@@ -14,7 +14,7 @@ from public.projects p
 join public.statuses s on s.project_id = p.project_id
 left join public.tasks t
   on t.project_id = p.project_id
- and t.status_id = s.status_id
+ and (t.project_id, t.status_id) = (s.project_id, s.status_id)
 left join public.task_assignees ta on ta.task_id = t.task_id
 left join public.users u on u.user_id = ta.user_id
 left join public.milestones m on m.milestone_id = t.milestone_id

@@ -27,6 +27,9 @@ CONES GitHub Issues와 GitHub Projects 칸반 보드를 관계형 데이터베�
 | Milestone 없는 Issue | 8 |
 
 이 값은 공개 GitHub repository API에서 가져온 Issue snapshot 기준입니다.
+Repository 전체 Issue 39건과 View 1 Project 카드 19건은 서로 다른 범위입니다.
+`tasks`에는 View 1 TSV에 실제 포함된 19개 카드만 넣고, 나머지 20개 Issue는
+보드 카드가 아니므로 제외했습니다.
 
 ### View 1 보드 snapshot
 
@@ -35,7 +38,7 @@ CONES GitHub Issues와 GitHub Projects 칸반 보드를 관계형 데이터베�
 사용했습니다. TSV의 `URL`에서 Issue 번호를 추출하고 `Status`를 칸반
 상태로 적재했습니다.
 
-| Status | status_position | 카드 수 |
+| Status | `statuses.position` | 카드 수 |
 | --- | ---: | ---: |
 | Todo | 0 | 0 |
 | In Progress | 1 | 3 |
@@ -48,6 +51,15 @@ Project item ID는 추측하지 않고 저장하지 않습니다.
 Issue의 `open`/`closed`와 Milestone은 원본 Issues snapshot에서 별도로
 확인했습니다. 저장소 전체 Issue 39건 중 TSV에 포함된 19건만 `tasks`에
 적재했습니다.
+
+### 포함·제외 기준
+
+| 구분 | 기준 |
+| --- | --- |
+| 포함 | 최종 `cones-project-view1.tsv`에 행으로 존재하고 URL에서 Issue 번호를 확인할 수 있는 19개 카드 |
+| 제외 | Repository Issue snapshot에는 있지만 View 1 TSV에 없는 20개 Issue |
+| 보존 위치 | 전체 39건의 원본 API payload는 `data/raw/cones-issues.json`에 보존 |
+| 상태 열 순서 | `tasks.status_position`을 사용하지 않고 `statuses.position`을 JOIN하여 조회 |
 
 `discrepancy-report.md`에 참고 JSON의 `tasks: []`, orphan assignment,
 Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기록했습니다.
@@ -65,7 +77,8 @@ Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기�
 
 `tasks.issue_state`는 GitHub Issue의 `open`/`closed`이고,
 `tasks.status_id`는 칸반 열입니다. 두 값을 하나의 상태 문자열로 합치지
-않았습니다. TSV에 없는 Project item ID와 node_id는 저장하지 않습니다. 전체 Issue API
+않았습니다. `tasks.status_id`는 `(project_id, status_id)` 복합 외래 키로
+동일 프로젝트의 `statuses`만 참조합니다. TSV에 없는 Project item ID와 node_id는 저장하지 않습니다. 전체 Issue API
 payload는 [`data/raw/cones-issues.json`](data/raw/cones-issues.json)에만
 원본으로 보존하고 핵심 테이블에는 복사하지 않습니다.
 
@@ -151,7 +164,8 @@ erDiagram
 | 개념 ERD | 위 Mermaid ERD, [`docs/kanban-erd.md`](docs/kanban-erd.md) | 완료 |
 | 실제 Supabase 테이블과 데이터 | Supabase 적용 결과 및 [`seed.sql`](seed.sql) | 완료 |
 | JOIN으로 원본 보드 재현 | [`scripts/reproduce-board.sql`](scripts/reproduce-board.sql) | 완료 |
-| 상태별·전체·담당자 수 검증 | [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
+| 저장소 Issue 39건과 View 1 카드 19건 범위 검증 | [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
+| 상태별·전체·담당자 수·프로젝트 일치 검증 | [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
 | 원본 보드·Supabase·JOIN 화면 캡처 | [`docs/evidence/README.md`](docs/evidence/README.md) | 캡처 필요 |
 
 ## 실행 순서
@@ -165,6 +179,9 @@ erDiagram
 
 현재 seed는 최종 TSV의 19개 카드와 저장소 Issue 메타데이터를 재현합니다.
 상태별 검증 결과는 Todo 0건, In Progress 3건, Done 16건, 총 19건입니다.
+프로젝트-상태 참조 검증 결과는 불일치 0건이며, 마이그레이션은
+[`migrations/004_enforce_project_status_scope.sql`](migrations/004_enforce_project_status_scope.sql)에
+기록했습니다.
 
 ## 실제 적용 상태
 
