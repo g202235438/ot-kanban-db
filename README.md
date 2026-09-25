@@ -70,6 +70,87 @@ Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기�
 개념 ERD는 [`docs/kanban-erd.md`](docs/kanban-erd.md)에 있습니다. 주요
 PK/FK와 Task–User 복합 PK도 ERD에 표시했습니다.
 
+### Conceptual ERD
+
+```mermaid
+erDiagram
+    PROJECTS ||--o{ STATUSES : defines
+    PROJECTS ||--o{ MILESTONES : groups
+    PROJECTS ||--o{ TASKS : contains
+    STATUSES ||--o{ TASKS : places
+    MILESTONES o|--o{ TASKS : groups
+    USERS ||--o{ TASK_ASSIGNEES : receives
+    TASKS ||--o{ TASK_ASSIGNEES : has
+
+    PROJECTS {
+        bigint project_id PK
+        text project_name
+        text github_repo_full_name UK
+        int github_project_number
+    }
+    STATUSES {
+        bigint status_id PK
+        bigint project_id FK
+        text status_name
+        int position
+        boolean is_done
+    }
+    MILESTONES {
+        bigint milestone_id PK
+        bigint project_id FK
+        int github_milestone_number
+        text title
+        text state
+    }
+    USERS {
+        bigint user_id PK
+        text github_username UK
+        text display_name
+    }
+    TASKS {
+        bigint task_id PK
+        bigint project_id FK
+        bigint status_id FK
+        bigint milestone_id FK
+        int github_issue_number
+        text issue_state
+        int status_position
+        int card_position
+    }
+    TASK_ASSIGNEES {
+        bigint task_id PK, FK
+        bigint user_id PK, FK
+        timestamptz assigned_at
+    }
+```
+
+#### 관계와 정규화
+
+- `projects`와 `statuses`를 분리해 보드명과 열 이름의 반복을 제거했습니다.
+- `users`를 분리해 담당자 계정 정보를 한 번만 저장합니다.
+- Task와 User는 한 Task에 여러 담당자가 배정될 수 있으므로
+  `task_assignees` 연결 테이블로 N:M 관계를 표현합니다.
+- `milestones`는 여러 Task가 공유하고, Milestone이 없는 Task도 허용합니다.
+- `tasks.issue_state`는 GitHub Issue의 `open`/`closed`, `tasks.status_id`는
+  Kanban 열이므로 서로 다른 속성으로 유지합니다.
+- 각 독립 엔터티는 단일 PK를 사용하고, 연결 엔터티는
+  `(task_id, user_id)` 복합 PK를 사용합니다.
+
+### 과제 기준 확인표
+
+| 과제 요구사항 | 저장소 반영 위치 | 상태 |
+| --- | --- | --- |
+| 실제 원본 보드 카드 19건 사용 | [`data/raw/cones-project-view1.tsv`](data/raw/cones-project-view1.tsv), [`seed.sql`](seed.sql) | 완료 |
+| Todo / In Progress / Done 상태와 건수 | `statuses`, `tasks.status_id`, [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
+| Issue `open`/`closed`와 보드 Status 분리 | `tasks.issue_state`, `tasks.status_id` | 완료 |
+| 엔터티·관계·정규화 설명 | 이 README의 관계와 정규화, [`db.spec.md`](db.spec.md) | 완료 |
+| PK / FK / UNIQUE / CHECK | [`schema.sql`](schema.sql) | 완료 |
+| 개념 ERD | 위 Mermaid ERD, [`docs/kanban-erd.md`](docs/kanban-erd.md) | 완료 |
+| 실제 Supabase 테이블과 데이터 | Supabase 적용 결과 및 [`seed.sql`](seed.sql) | 완료 |
+| JOIN으로 원본 보드 재현 | [`scripts/reproduce-board.sql`](scripts/reproduce-board.sql) | 완료 |
+| 상태별·전체·담당자 수 검증 | [`scripts/verify.sql`](scripts/verify.sql) | 완료 |
+| 원본 보드·Supabase·JOIN 화면 캡처 | [`docs/evidence/README.md`](docs/evidence/README.md) | 캡처 필요 |
+
 ## 실행 순서
 
 1. Supabase SQL Editor에서 [`schema.sql`](schema.sql)을 실행합니다.
