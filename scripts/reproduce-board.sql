@@ -1,6 +1,5 @@
 -- Reconstructs the 2026-09-25 public View 1 observation.
--- Project item IDs were not available, so the comparison uses Issue number,
--- status_position, and card_position from the attached observation.
+-- Project item IDs are not part of the final TSV and are intentionally absent.
 
 select
   p.project_name,
@@ -9,8 +8,6 @@ select
   t.github_issue_number,
   t.title,
   t.issue_state,
-  t.status_position,
-  t.card_position,
   string_agg(u.github_username, ', ' order by u.github_username) as assignees,
   m.title as milestone
 from public.projects p
@@ -24,4 +21,4 @@ left join public.milestones m on m.milestone_id = t.milestone_id
 where p.github_repo_full_name = 'seune-h0203/cones'
 group by p.project_id, p.project_name, s.status_id, s.position, s.status_name,
   t.task_id, t.github_issue_number, t.title, t.issue_state, m.title
-order by s.position, t.card_position;
+order by s.position, t.github_issue_number;

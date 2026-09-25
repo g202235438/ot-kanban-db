@@ -42,19 +42,15 @@ erDiagram
         bigint milestone_id FK
         int github_issue_number
         text issue_state
-        int status_position
-        int card_position
     }
     TASK_ASSIGNEES {
         bigint task_id PK, FK
         bigint user_id PK, FK
-        timestamptz assigned_at
     }
 ```
 
-`TASKS.issue_state` stores the GitHub Issue `open`/`closed` value, while
-`TASKS.status_id` stores the Kanban column from the final View 1 TSV. They are
-intentionally separate. `github_project_item_id` is not shown as a populated
-attribute because the TSV did not provide Project item IDs; the database column
-exists and is NULL for all 19 imported cards.
-
+`TASKS` intentionally contains only the fields needed to reproduce the 19 View 1
+cards: internal PK, project FK, Issue number/title/URL, Issue state, status FK,
+and optional Milestone FK. `TASKS.issue_state` stores the GitHub Issue
+`open`/`closed` value, while `TASKS.status_id` stores the Kanban column. Node IDs
+and Project item IDs are not stored because the TSV does not provide them.

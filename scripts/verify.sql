@@ -65,8 +65,6 @@ select
   t.title,
   t.issue_state,
   s.status_name as board_status,
-  t.status_position,
-  t.card_position,
   string_agg(u.github_username, ', ' order by u.github_username) as assignees,
   m.title as milestone
 from public.tasks t
@@ -75,4 +73,4 @@ left join public.task_assignees ta on ta.task_id = t.task_id
 left join public.users u on u.user_id = ta.user_id
 left join public.milestones m on m.milestone_id = t.milestone_id
 group by t.task_id, s.status_name, m.title
-order by t.status_position, t.card_position;
+order by s.position, t.github_issue_number;

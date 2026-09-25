@@ -43,8 +43,8 @@ CONES GitHub Issues와 GitHub Projects 칸반 보드를 관계형 데이터베�
 
 확인된 보드 Task는 Issue `#9, #13, #39`와 `#3, #1, #2, #4, #5, #6, #7,
 #10, #11, #12, #32, #33, #34, #35, #36, #37`의 총 19건입니다.
-`card_position`은 첨부 목록의 열 내부 표시 순서를 저장합니다.
-Project item ID는 TSV에 없으므로 추측하지 않고 NULL로 유지했습니다.
+Status 열 순서는 `statuses.position`으로 관리합니다. TSV에 없는 node_id와
+Project item ID는 추측하지 않고 저장하지 않습니다.
 Issue의 `open`/`closed`와 Milestone은 원본 Issues snapshot에서 별도로
 확인했습니다. 저장소 전체 Issue 39건 중 TSV에 포함된 19건만 `tasks`에
 적재했습니다.
@@ -65,7 +65,9 @@ Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기�
 
 `tasks.issue_state`는 GitHub Issue의 `open`/`closed`이고,
 `tasks.status_id`는 칸반 열입니다. 두 값을 하나의 상태 문자열로 합치지
-않았습니다. `github_project_item_id`는 TSV에 없어 NULL입니다.
+않았습니다. TSV에 없는 Project item ID와 node_id는 저장하지 않습니다. 전체 Issue API
+payload는 [`data/raw/cones-issues.json`](data/raw/cones-issues.json)에만
+원본으로 보존하고 핵심 테이블에는 복사하지 않습니다.
 
 개념 ERD는 [`docs/kanban-erd.md`](docs/kanban-erd.md)에 있습니다. 주요
 PK/FK와 Task–User 복합 PK도 ERD에 표시했습니다.
@@ -114,13 +116,10 @@ erDiagram
         bigint milestone_id FK
         int github_issue_number
         text issue_state
-        int status_position
-        int card_position
     }
     TASK_ASSIGNEES {
         bigint task_id PK, FK
         bigint user_id PK, FK
-        timestamptz assigned_at
     }
 ```
 
@@ -133,6 +132,10 @@ erDiagram
 - `milestones`는 여러 Task가 공유하고, Milestone이 없는 Task도 허용합니다.
 - `tasks.issue_state`는 GitHub Issue의 `open`/`closed`, `tasks.status_id`는
   Kanban 열이므로 서로 다른 속성으로 유지합니다.
+- `tasks`는 내부 PK, 프로젝트 FK, Issue 번호·제목·URL, Issue state,
+  status FK, 선택적 milestone FK만 유지해 카드 재현에 필요한 최소 구조로
+  정제했습니다. Issue 본문·작성자·생성/종료 시각·node_id·Project item ID는
+  핵심 테이블에서 제외했습니다.
 - 각 독립 엔터티는 단일 PK를 사용하고, 연결 엔터티는
   `(task_id, user_id)` 복합 PK를 사용합니다.
 
