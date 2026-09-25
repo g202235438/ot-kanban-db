@@ -67,7 +67,8 @@ Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기�
 `tasks.status_id`는 칸반 열입니다. 두 값을 하나의 상태 문자열로 합치지
 않았습니다. `github_project_item_id`는 TSV에 없어 NULL입니다.
 
-개념 ERD는 [`docs/kanban-erd.md`](docs/kanban-erd.md)에 있습니다.
+개념 ERD는 [`docs/kanban-erd.md`](docs/kanban-erd.md)에 있습니다. 주요
+PK/FK와 Task–User 복합 PK도 ERD에 표시했습니다.
 
 ## 실행 순서
 
@@ -89,6 +90,6 @@ Project 번호 `1` 대 URL `/projects/3` 차이와 후속 확인 방법을 기�
 - Supabase Issue/task seed: 최종 TSV의 19개 카드 적용 완료
 - RLS: 인증 정책을 검증하지 않아 미적용
 - Project 카드 Status/순서 대조: 최종 TSV 기준 확인
-- 실제 Supabase Table Editor / 원본 보드 캡처: 발표용으로 필요
+- 실제 Supabase Table Editor / 원본 보드 / JOIN 결과 캡처: [`docs/evidence/README.md`](docs/evidence/README.md)의 체크리스트에 따라 발표용으로 필요
 
 비밀키, service role key, PAT는 저장소와 문서에 넣지 않습니다.
