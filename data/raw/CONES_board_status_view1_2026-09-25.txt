@@ -1,0 +1,28 @@
+Source: https://github.com/users/seune-h0203/projects/3
+Observed: 2026-09-25, public GitHub Projects View 1 (read-only)
+Status columns and counts: Todo=0, In Progress=3, Done=16
+status_position: 0=Todo, 1=In Progress, 2=Done
+card_position: visible top-to-bottom order within that column, starting at 1
+
+issue_number,status,status_position,card_position
+9,In Progress,1,1
+13,In Progress,1,2
+39,In Progress,1,3
+3,Done,2,1
+1,Done,2,2
+2,Done,2,3
+4,Done,2,4
+5,Done,2,5
+6,Done,2,6
+7,Done,2,7
+10,Done,2,8
+11,Done,2,9
+12,Done,2,10
+32,Done,2,11
+33,Done,2,12
+34,Done,2,13
+35,Done,2,14
+36,Done,2,15
+37,Done,2,16
+
+Scope note: The public board has 19 cards in this view. The repository may have more Issues; do not treat all repository Issues as board cards. This is a point-in-time observation of View 1, not a GitHub Projects CSV export or complete API payload. Project item IDs were not extracted. Issue state (open/closed) remains a separate field from board Status.

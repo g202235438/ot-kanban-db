@@ -1,25 +1,27 @@
--- 원본 칸반 보드 화면과 같은 형태로 Task를 다시 조회합니다.
--- Board → Status → Task → Assignee를 JOIN합니다.
+-- Reconstructs the 2026-09-25 public View 1 observation.
+-- Project item IDs were not available, so the comparison uses Issue number,
+-- status_position, and card_position from the attached observation.
 
 select
-  b.board_name,
-  s.status_name,
+  p.project_name,
   s.position as status_position,
-  t.position as task_position,
+  s.status_name,
   t.github_issue_number,
   t.title,
   t.issue_state,
-  t.priority,
-  t.estimate,
-  t.size,
-  coalesce(string_agg(m.member_name, ', ' order by m.member_name), '담당자 미지정') as assignees
-from public.kanban_board b
-join public.kanban_status s on s.board_id = b.board_id
-left join public.kanban_task t on t.status_id = s.status_id
-left join public.kanban_task_assignee ta on ta.task_id = t.task_id
-left join public.kanban_member m on m.member_id = ta.member_id
-where b.github_project_url = 'https://github.com/users/g202235438/projects/1'
-group by b.board_id, b.board_name, s.status_id, s.status_name, s.position,
-         t.task_id, t.position, t.github_issue_number, t.title,
-         t.issue_state, t.priority, t.estimate, t.size
-order by s.position, t.position, t.github_issue_number;
+  t.status_position,
+  t.card_position,
+  string_agg(u.github_username, ', ' order by u.github_username) as assignees,
+  m.title as milestone
+from public.projects p
+join public.statuses s on s.project_id = p.project_id
+left join public.tasks t
+  on t.project_id = p.project_id
+ and t.status_id = s.status_id
+left join public.task_assignees ta on ta.task_id = t.task_id
+left join public.users u on u.user_id = ta.user_id
+left join public.milestones m on m.milestone_id = t.milestone_id
+where p.github_repo_full_name = 'seune-h0203/cones'
+group by p.project_id, p.project_name, s.status_id, s.position, s.status_name,
+  t.task_id, t.github_issue_number, t.title, t.issue_state, m.title
+order by s.position, t.card_position;
