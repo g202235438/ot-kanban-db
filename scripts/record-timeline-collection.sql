@@ -23,25 +23,25 @@ select
   v.failure_reason
 from (
   values
-    (1, 200, 0, 0, null),
-    (2, 200, 0, 0, null),
-    (3, 200, 0, 0, null),
-    (4, 200, 0, 0, null),
-    (5, 200, 0, 0, null),
-    (6, 200, 0, 0, null),
-    (7, 200, 0, 0, null),
-    (9, 200, 0, 0, null),
-    (10, 200, 0, 0, null),
-    (11, 200, 0, 0, null),
-    (12, 200, 0, 0, null),
-    (13, 200, 0, 0, null),
-    (32, 200, 0, 0, null),
-    (33, 200, 0, 0, null),
-    (34, 200, 0, 0, null),
-    (35, 200, 0, 0, null),
-    (36, 200, 0, 0, null),
-    (37, 200, 0, 0, null),
-    (39, 200, 0, 0, null)
+    (1, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (2, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (3, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (4, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (5, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (6, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (7, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (9, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (10, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (11, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (12, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (13, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (32, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (33, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (34, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (35, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (36, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (37, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded'),
+    (39, 403, 0, 0, 'GitHub API unauthenticated rate limit exceeded')
 ) v(issue_number, http_status, collected_event_count, loaded_event_count, failure_reason)
 cross join lateral (
   values (

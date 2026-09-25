@@ -22,9 +22,9 @@ from public.timeline_collection_requests;
 select
   179 as legacy_source_unknown_events,
   0 as legacy_events_linked,
-  19 as requested_cards,
-  19 as failed_requests_due_to_github_api_rate_limit,
-  0 as newly_collected_events,
+  (select count(*) from public.timeline_collection_requests) as requested_cards,
+  (select count(*) from public.timeline_collection_requests where http_status <> 200) as failed_requests,
+  (select coalesce(sum(collected_event_count), 0) from public.timeline_collection_requests) as newly_collected_events,
   (select count(*) from public.issue_timeline_events) as loaded_timeline_events,
   (select count(*) from public.project_status_history) as loaded_status_history;
 

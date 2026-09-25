@@ -197,7 +197,7 @@ erDiagram
 기록했습니다.
 
 Issue 본문은 19건, 댓글은 GitHub API에서 확인된 15건을 Supabase에 적재했습니다.
-기존에 출처 없이 보존된 Timeline 이벤트 179건은
+기존에 출처 없이 보존된 Timeline 이벤트 원본은 179건입니다.
 [`data/raw/cones-view1-events.json`](data/raw/cones-view1-events.json)에
 보존하지만, 저장된 이벤트 객체에는 출처 Issue 번호나 URL이 기록되지 않았습니다.
 이벤트 URL도 `/issues/events/{event_id}` 형식이어서 19개 `tasks`와 정확히
@@ -207,13 +207,18 @@ Issue 본문은 19건, 댓글은 GitHub API에서 확인된 15건을 Supabase에
 상세 검증은 [`scripts/verify-timeline.sql`](scripts/verify-timeline.sql)에
 남겼습니다.
 
-이후 19개 카드별로 Issue 번호·Issue URL·연결할 `task_id`를 함께 기록하는
-재수집을 시도했지만, GitHub API 비인증 요청 한도 초과로 19건 모두 HTTP 403
-실패했습니다. 따라서 이번 재수집의 성공 0건, 실패 19건, 신규 이벤트 적재
-0건입니다. 요청별 결과는 `timeline_collection_requests`와
+이후 19개 카드를 대상으로 Issue 번호·Issue URL·연결할 `task_id`를 함께
+기록하는 재수집 요청 19건을 시도했지만, GitHub API 비인증 요청 한도 초과로
+19건 모두 HTTP 403 실패했습니다. 따라서 이번 재수집은 성공 요청 0건,
+실패 요청 19건, 수집 이벤트 0건, 신규 이벤트 적재 0건입니다. 기존 원본
+179건과 신규 요청 19건은 서로 다른 집계이며, 합산한 값이 Timeline 적재
+건수를 의미하지 않습니다. 요청별 결과는 `timeline_collection_requests`와
 [`scripts/verify-timeline-collection.sql`](scripts/verify-timeline-collection.sql)에
 기록했습니다. 인증된 관리자 환경에서 수집이 성공한 경우에만 이벤트를
 `issue_timeline_events`에 넣을 수 있습니다.
+현재 실행 환경에서는 `gh` CLI가 설치되어 있지 않았고 `GH_TOKEN`/`GITHUB_TOKEN`
+환경변수도 확인되지 않았습니다. 따라서 이번 재수집은 인증된 요청으로 전환할
+수 없었으며, 토큰을 출력하거나 파일·저장소에 저장하지 않았습니다.
 
 ### RLS와 앱 권한
 
