@@ -197,15 +197,23 @@ erDiagram
 기록했습니다.
 
 Issue 본문은 19건, 댓글은 GitHub API에서 확인된 15건을 Supabase에 적재했습니다.
-19개 Issue 요청에서 수집된 Timeline 이벤트 179건은
+기존에 출처 없이 보존된 Timeline 이벤트 179건은
 [`data/raw/cones-view1-events.json`](data/raw/cones-view1-events.json)에
-보존했지만, 저장된 이벤트 객체에는 출처 Issue 번호나 URL이 기록되지 않았습니다.
+보존하지만, 저장된 이벤트 객체에는 출처 Issue 번호나 URL이 기록되지 않았습니다.
 이벤트 URL도 `/issues/events/{event_id}` 형식이어서 19개 `tasks`와 정확히
 매칭할 수 없습니다. 따라서 Timeline 이벤트 적재 건수는 0건이고, 179건을
 출처 미확인으로 제외했습니다. 그중 `project_v2_item_status_changed` 40건도
 변경 전·후 Status 값이 없어 `project_status_history`에 추측해서 넣지 않았습니다.
 상세 검증은 [`scripts/verify-timeline.sql`](scripts/verify-timeline.sql)에
 남겼습니다.
+
+이후 19개 카드별로 Issue 번호·Issue URL·연결할 `task_id`를 함께 기록하는
+재수집을 시도했지만, GitHub API 비인증 요청 한도 초과로 19건 모두 HTTP 403
+실패했습니다. 따라서 이번 재수집의 성공 0건, 실패 19건, 신규 이벤트 적재
+0건입니다. 요청별 결과는 `timeline_collection_requests`와
+[`scripts/verify-timeline-collection.sql`](scripts/verify-timeline-collection.sql)에
+기록했습니다. 인증된 관리자 환경에서 수집이 성공한 경우에만 이벤트를
+`issue_timeline_events`에 넣을 수 있습니다.
 
 ### RLS와 앱 권한
 
@@ -224,6 +232,8 @@ Windows 명령 `python -m http.server 4173`로 로컬 실행을 확인했고, �
 - `app.js`: `issue_details`, `issue_comments` 조회와 상세 화면 표시 추가,
   카드 상태 변경 PATCH 제거 및 읽기 전용 안내
 - `README.md`: Windows 실행 명령과 읽기 전용 DB 사용법 추가
+- [`docs/team-app.patch`](docs/team-app.patch): 두 파일을 팀원 저장소에
+  적용할 수 있는 unified patch
 
 적용 방법은 팀원 저장소에서 두 파일을 교체한 뒤
 `python -m http.server 4173`을 실행하는 것입니다. 브라우저에서

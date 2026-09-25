@@ -82,6 +82,9 @@ create table if not exists public.issue_comments (
 create table if not exists public.issue_timeline_events (
   event_id bigint primary key,
   task_id bigint references public.tasks(task_id) on delete cascade,
+  requested_issue_number integer,
+  requested_issue_url text,
+  requested_task_id bigint references public.tasks(task_id) on delete cascade,
   event_type text not null,
   actor_login text,
   occurred_at timestamptz not null,

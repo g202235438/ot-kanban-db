@@ -1,0 +1,106 @@
+﻿diff --git a/README.md b/README.md
+index 10c32ba..35c5fda 100644
+--- a/README.md
++++ b/README.md
+@@ -8,10 +8,19 @@ Supabase 프로젝트 ismhrkrkbvlbsxmwhvzb의 GitHub Project 데이터를 실제
+ 
+     npm run dev
+ 
++Windows PowerShell에서 `python3` 명령을 찾지 못하면 아래 명령을 사용합니다.
++
++    python -m http.server 4173
++
+ 같은 명령은 내부적으로 Python 표준 라이브러리 서버를 실행합니다.
+ 
+ 브라우저에서 http://localhost:4173 을 엽니다.
+ 
++브라우저 Supabase 클라이언트는 RLS에 따라 조회만 할 수 있습니다. 카드 상태
++변경은 GitHub Projects에서 관리하며, 이 앱은 `tasks.status_id`를 수정하지
++않습니다. `config.js`에는 publishable key만 사용하고 service_role 키는 넣지
++않습니다.
++
+ ## 구성
+ 
+ - index.html, styles.css, app.js: GitHub Projects 스타일 Board UI
+@@ -19,4 +28,7 @@ Supabase 프로젝트 ismhrkrkbvlbsxmwhvzb의 GitHub Project 데이터를 실제
+ - data.json: 연결된 DB에서 읽어온 읽기 전용 fallback snapshot
+ - KANBAN_WORKLOG.md: DB 확인 내용과 작업 기록
+ 
+-현재 DB의 projects, statuses, users, milestones, tasks, task_assignees를 사용합니다. 카드 드래그 이동은 live Supabase 연결 시 tasks.status_id에 반영됩니다.
++현재 DB의 projects, statuses, users, milestones, tasks, task_assignees,
++issue_details, issue_comments를 읽습니다. Issue 상세 화면에서 본문과 댓글을
++조회하며, RLS 정책에 맞춰 브라우저에서는 읽기만 가능합니다. 카드 상태 변경은
++GitHub Projects에서 관리합니다.
+diff --git a/app.js b/app.js
+index 4b666f1..7b19f20 100644
+--- a/app.js
++++ b/app.js
+@@ -28,16 +28,27 @@ function issueUrl(task) { return task.issue_url || "https://github.com/" + proje
+ function unwrap(raw) {
+   const usersById = new Map((raw.users || []).map(function (user) { return [user.user_id, user]; }));
+   const assigneesByTask = new Map();
++  const detailsByTask = new Map((raw.issue_details || []).map(function (detail) { return [detail.task_id, detail]; }));
++  const commentsByTask = new Map();
+   (raw.task_assignees || []).forEach(function (row) {
+     const user = usersById.get(row.user_id);
+     if (user) assigneesByTask.set(row.task_id, (assigneesByTask.get(row.task_id) || []).concat(user));
+   });
++  (raw.issue_comments || []).forEach(function (comment) {
++    commentsByTask.set(comment.task_id, (commentsByTask.get(comment.task_id) || []).concat(comment));
++  });
+   return {
+     project: (raw.projects || [])[0] || {},
+     statuses: (raw.statuses || []).sort(function (a, b) { return a.position - b.position; }),
+     users: raw.users || [],
+     milestones: raw.milestones || [],
+-    tasks: (raw.tasks || []).map(function (task) { return Object.assign({}, task, { assignees: assigneesByTask.get(task.task_id) || [] }); })
++    tasks: (raw.tasks || []).map(function (task) {
++      return Object.assign({}, task, {
++        assignees: assigneesByTask.get(task.task_id) || [],
++        details: detailsByTask.get(task.task_id) || null,
++        comments: commentsByTask.get(task.task_id) || []
++      });
++    })
+   };
+ }
+ async function fetchSnapshot() {
+@@ -60,9 +71,11 @@ async function fetchLive() {
+     get("users", "select=*&order=user_id"),
+     get("milestones", "select=*&order=milestone_id"),
+     get("tasks", "select=*&order=status_id.asc,github_issue_number.asc"),
+-    get("task_assignees", "select=*&order=task_id,user_id")
++    get("task_assignees", "select=*&order=task_id,user_id"),
++    get("issue_details", "select=*&order=task_id"),
++    get("issue_comments", "select=*&order=created_at")
+   ]);
+-  return unwrap({ projects: results[0], statuses: results[1], users: results[2], milestones: results[3], tasks: results[4], task_assignees: results[5] });
++  return unwrap({ projects: results[0], statuses: results[1], users: results[2], milestones: results[3], tasks: results[4], task_assignees: results[5], issue_details: results[6], issue_comments: results[7] });
+ }
+ function applyData(data, live) {
+   state.project = data.project; state.statuses = data.statuses; state.users = data.users; state.milestones = data.milestones; state.tasks = data.tasks; state.live = live;
+@@ -130,21 +143,15 @@ function openTask(taskId) {
+   const milestone = state.milestones.find(function (item) { return item.milestone_id === task.milestone_id; });
+   const names = task.assignees.length ? task.assignees.map(function (user) { return escapeHtml(user.github_username); }).join(", ") : "Unassigned";
+   const issueLabel = task.issue_state === "closed" ? "Closed" : "Open";
+-  $("#modal-root").innerHTML = '<div class="modal-backdrop" data-action="close-modal"><article class="modal issue-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><p class="modal-kicker">Issue #' + task.github_issue_number + " · " + escapeHtml(projectRepo()) + '</p><h2 id="modal-title">' + escapeHtml(task.title) + '</h2><p class="issue-status"><span class="issue-state ' + (task.issue_state === "closed" ? "closed" : "") + '"></span>' + issueLabel + '</p></div><button type="button" class="modal-close" data-action="close-modal" aria-label="Close">×</button></div><div class="issue-section"><h3>Description</h3><p class="empty-detail">Issue description is not stored in the connected Supabase database.</p></div><div class="issue-section"><h3>Activity</h3><p class="empty-detail">Comments and timeline history are not stored in the connected Supabase database.</p></div><dl class="modal-details"><div class="detail-row"><dt>Project status</dt><dd>' + escapeHtml(status ? status.status_name : "Unknown") + '</dd></div><div class="detail-row"><dt>Assignees</dt><dd>' + names + '</dd></div><div class="detail-row"><dt>Milestone</dt><dd>' + escapeHtml(milestone ? milestone.title : "None") + '</dd></div></dl><div class="modal-actions"><a class="control-button" href="' + escapeHtml(issueUrl(task)) + '" target="_blank" rel="noreferrer">Open in GitHub ↗</a></div></article></div>';
++  const body = task.details && task.details.body ? escapeHtml(task.details.body).replace(/\n/g, "<br>") : "No description";
++  const comments = task.comments.length ? task.comments.map(function (comment) { return '<p><strong>' + escapeHtml(comment.author_login) + '</strong> · ' + escapeHtml(comment.created_at) + '<br>' + escapeHtml(comment.body).replace(/\n/g, "<br>") + "</p>"; }).join("") : "No comments";
++  $("#modal-root").innerHTML = '<div class="modal-backdrop" data-action="close-modal"><article class="modal issue-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><p class="modal-kicker">Issue #' + task.github_issue_number + " · " + escapeHtml(projectRepo()) + '</p><h2 id="modal-title">' + escapeHtml(task.title) + '</h2><p class="issue-status"><span class="issue-state ' + (task.issue_state === "closed" ? "closed" : "") + '"></span>' + issueLabel + '</p></div><button type="button" class="modal-close" data-action="close-modal" aria-label="Close">×</button></div><div class="issue-section"><h3>Description</h3><p>' + body + '</p></div><div class="issue-section"><h3>Comments</h3>' + comments + '</div><dl class="modal-details"><div class="detail-row"><dt>Project status</dt><dd>' + escapeHtml(status ? status.status_name : "Unknown") + '</dd></div><div class="detail-row"><dt>Assignees</dt><dd>' + names + '</dd></div><div class="detail-row"><dt>Milestone</dt><dd>' + escapeHtml(milestone ? milestone.title : "None") + '</dd></div></dl><div class="modal-actions"><a class="control-button" href="' + escapeHtml(issueUrl(task)) + '" target="_blank" rel="noreferrer">Open in GitHub ↗</a></div></article></div>';
+ }
+ function closeModal() { $("#modal-root").innerHTML = ""; }
+-async function persistStatus(task, previousStatusId) {
+-  if (!state.live) return;
+-  const response = await fetch(String(CONFIG.supabaseUrl).replace(/\/$/, "") + "/rest/v1/tasks?task_id=eq." + encodeURIComponent(task.task_id), { method: "PATCH", headers: { apikey: CONFIG.supabaseKey, Authorization: "Bearer " + CONFIG.supabaseKey, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ status_id: task.status_id }) });
+-  if (!response.ok) { task.status_id = previousStatusId; render(); throw new Error("status update failed"); }
+-}
+ function moveTask(taskId, statusId) {
+   const task = state.tasks.find(function (item) { return String(item.task_id) === String(taskId); });
+   if (!task || task.status_id === statusId) return;
+-  const previousStatusId = task.status_id; task.status_id = statusId; render();
+-  const status = state.statuses.find(function (item) { return item.status_id === statusId; });
+-  showToast("#" + task.github_issue_number + " moved to " + (status ? status.status_name : "new status"));
+-  persistStatus(task, previousStatusId).catch(function () { showToast("Saved locally; Supabase update failed."); });
++  showToast("This board is read-only. Manage status changes in GitHub Projects.");
+ }
+ function handleAction(action, target) {
+   if (action === "toggle-filter") { filterPopover.hidden = !filterPopover.hidden; target.setAttribute("aria-expanded", String(!filterPopover.hidden)); }
