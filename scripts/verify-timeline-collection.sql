@@ -23,8 +23,10 @@ select
   179 as legacy_source_unknown_events,
   0 as legacy_events_linked,
   (select count(*) from public.timeline_collection_requests) as requested_cards,
+  (select count(*) from public.timeline_collection_requests where http_status = 200) as successful_requests,
   (select count(*) from public.timeline_collection_requests where http_status <> 200) as failed_requests,
   (select coalesce(sum(collected_event_count), 0) from public.timeline_collection_requests) as newly_collected_events,
+  (select coalesce(sum(loaded_event_count), 0) from public.timeline_collection_requests) as recorded_loaded_events,
   (select count(*) from public.issue_timeline_events) as loaded_timeline_events,
   (select count(*) from public.project_status_history) as loaded_status_history;
 
@@ -34,3 +36,17 @@ from public.project_status_history
 where verification_status = 'verified'
   and from_status_id is not null
   and to_status_id is not null;
+
+select
+  requested_issue_number,
+  collected_event_count,
+  loaded_event_count,
+  (select count(*)
+     from public.issue_timeline_events e
+    where e.requested_issue_number = r.requested_issue_number) as actual_loaded_rows,
+  collected_event_count -
+  (select count(*)
+     from public.issue_timeline_events e
+    where e.requested_issue_number = r.requested_issue_number) as remaining_to_load
+from public.timeline_collection_requests r
+order by requested_issue_number;

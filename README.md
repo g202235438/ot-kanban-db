@@ -208,17 +208,22 @@ Issue 본문은 19건, 댓글은 GitHub API에서 확인된 15건을 Supabase에
 남겼습니다.
 
 이후 19개 카드를 대상으로 Issue 번호·Issue URL·연결할 `task_id`를 함께
-기록하는 재수집 요청 19건을 시도했지만, GitHub API 비인증 요청 한도 초과로
-19건 모두 HTTP 403 실패했습니다. 따라서 이번 재수집은 성공 요청 0건,
-실패 요청 19건, 수집 이벤트 0건, 신규 이벤트 적재 0건입니다. 기존 원본
-179건과 신규 요청 19건은 서로 다른 집계이며, 합산한 값이 Timeline 적재
-건수를 의미하지 않습니다. 요청별 결과는 `timeline_collection_requests`와
-[`scripts/verify-timeline-collection.sql`](scripts/verify-timeline-collection.sql)에
-기록했습니다. 인증된 관리자 환경에서 수집이 성공한 경우에만 이벤트를
-`issue_timeline_events`에 넣을 수 있습니다.
-현재 실행 환경에서는 `gh` CLI가 설치되어 있지 않았고 `GH_TOKEN`/`GITHUB_TOKEN`
-환경변수도 확인되지 않았습니다. 따라서 이번 재수집은 인증된 요청으로 전환할
-수 없었으며, 토큰을 출력하거나 파일·저장소에 저장하지 않았습니다.
+기록하는 재수집을 다시 실행했습니다. 공개 API 한도가 회복되어 19건 모두
+HTTP 200으로 성공했고, 카드별 이벤트 179건을 끝까지 수집했습니다.
+각 이벤트에는 요청 Issue 번호·URL·`task_id`·이벤트 ID·종류·시각·원본 URL과
+API payload가 [`cones-view1-events-with-provenance.json`](data/raw/cones-view1-events-with-provenance.json)에
+보존됩니다. 관리자 적재용 SQL은 [`timeline-load-1.sql`](data/raw/timeline-load-1.sql)부터
+`timeline-load-4.sql`까지이며 `event_id` 기준 UPSERT라 재실행해도 중복되지 않습니다.
+이 SQL은 앱용 publishable/anon 키로 실행하지 마세요.
+
+현재 Supabase에는 재수집 요청 집계(성공 19건, 실패 0건, 수집 179건)는 반영했지만,
+이 세션에서 관리자 적재 자격 증명을 사용할 수 없어 `issue_timeline_events` 실제
+적재는 아직 0건입니다. 따라서 검증 SQL의 `loaded_event_count`는 관리자 SQL 실행
+전까지 기대값으로 기록되어 있으며, 적재 후 실제 행 수와 일치하는지 다시 확인해야
+합니다. 기존 출처 미상의 179건은 계속 제외합니다. `project_v2_item_status_changed`
+40건도 변경 전·후 Status 값이 없어 `project_status_history`에 추측해서 넣지 않았습니다.
+요청별 결과와 적재 전후 검증은 [`scripts/verify-timeline-collection.sql`](scripts/verify-timeline-collection.sql)에
+기록했습니다. 토큰은 출력하거나 파일·저장소에 저장하지 않았습니다.
 
 ### RLS와 앱 권한
 
