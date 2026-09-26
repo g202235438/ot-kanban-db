@@ -50,3 +50,24 @@ select
     where e.requested_issue_number = r.requested_issue_number) as remaining_to_load
 from public.timeline_collection_requests r
 order by requested_issue_number;
+
+select
+  count(*) as orphan_task_links
+from public.issue_timeline_events e
+left join public.tasks t on t.task_id = e.task_id
+where t.task_id is null;
+
+select
+  count(*) as mismatched_requested_task_links
+from public.issue_timeline_events e
+join public.tasks t on t.task_id = e.task_id
+where e.requested_task_id is distinct from e.task_id;
+
+select
+  count(*) as duplicate_event_ids
+from (
+  select event_id
+  from public.issue_timeline_events
+  group by event_id
+  having count(*) > 1
+) duplicates;
